@@ -122,13 +122,13 @@ _:
   add hl,hl
   add hl,hl
   rra
-  push af
+; push af
   ld c,a
   add hl,bc
   ld bc,(gbuf_temp)
   add hl,bc
   ld bc,060Ch
-  pop af
+: pop af
   ld de,$8005
   jr c,PutRight
 ;===============================================================

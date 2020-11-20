@@ -122,65 +122,52 @@ _:
   add hl,hl
   add hl,hl
   rra
-; push af
+  push af
   ld c,a
   add hl,bc
   ld bc,(gbuf_temp)
   add hl,bc
-  ld bc,060Ch
-: pop af
+  ld bc,$03f0
+  pop af
   ld de,$8005
   jr c,PutRight
-;===============================================================
-PutLeft:
-;===============================================================
-  ld a,(hl)
-  and 15
-  ld (hl),a
-  ld a,(de)
-  bit InvertTextFlag,(iy+UserFlags)
-  jr z,+_
-  cpl
-_:
-  bit 0,b
-  jr z,+_
-  rlca \ rlca \ rlca \ rlca
-  inc de
-_:
-  and $F0
-  or (hl)
-  ld (hl),a
-  ld a,b
-  ld b,0
-  add hl,bc
-  ld b,a
-  djnz PutLeft
-  ret
+  ld c,$0f
 ;===============================================================
 PutRight:
 ;===============================================================
-  ld a,(hl)
-  and $F0
-  ld (hl),a
   ld a,(de)
+  call ShiftPut
+;===============================================================
+PutLeft:
+;===============================================================
+  ld a,(de)
+  call Put
+  ld a,c
+  cp $0f
+  ld a,(de)
+  inc de
+  jr nz,+_
+  djnz PutRight
+  ret
+_:
+  call shiftPut
+  djnz PutLeft
+  ret
+  
+shiftPut:
+  rlca \ rlca \ rlca \ rlca
+Put:
   bit InvertTextFlag,(iy+UserFlags)
   jr z,+_
   cpl
 _:
-  bit 0,b
-  jr nz,+_
-  rlca \ rlca \ rlca \ rlca
-  dec de
-_:
-  inc de
-  and 15
+  and c
   or (hl)
   ld (hl),a
-  ld a,b
-  ld b,0
-  add hl,bc
-  ld b,a
-  djnz PutRight
+  push de
+  ld de,12
+  add hl,de
+  pop de
   ret
 OmniCalcFont:
 ;Inputs:

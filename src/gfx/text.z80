@@ -121,54 +121,53 @@ _:
   add hl,bc
   add hl,hl
   add hl,hl
-  rra
-  push af
+;srl c does the same thing but preserves af to use after the adding so carry can be checked. Save 
   ld c,a
+  srl c
   add hl,bc
   ld bc,(gbuf_temp)
   add hl,bc
-  ld bc,$03f0
-  pop af
+  rra
+  ld b,3
   ld de,$8005
   jr c,PutRight
-  ld c,$0f
-;===============================================================
-PutRight:
-;===============================================================
-  ld a,(de)
-  call ShiftPut
 ;===============================================================
 PutLeft:
 ;===============================================================
-  ld a,(de)
+  ld c,$F0
   call Put
-  ld a,c
-  cp $0f
-  ld a,(de)
   inc de
-  jr nz,+_
-  djnz PutRight
-  ret
-_:
-  call shiftPut
+  ld c,$F0
+  call ShiftPut
   djnz PutLeft
   ret
-  
-shiftPut:
+;===============================================================
+PutRight:
+;===============================================================
+  ld c,$0F
+  call ShiftPut
+  inc de
+  ld c,$0F
+  call Put
+  djnz PutRight
+  ret
+ShiftPut:
   rlca \ rlca \ rlca \ rlca
 Put:
-  bit InvertTextFlag,(iy+UserFlags)
+  bit textInverse,(iy+textFlags)
   jr z,+_
   cpl
 _:
   and c
   or (hl)
   ld (hl),a
-  push de
-  ld de,12
-  add hl,de
-  pop de
+  ld a,b
+  ld bc,12
+  add hl,bc
+  ld b,a
+  ld a,(de)
   ret
+
 OmniCalcFont:
 ;Inputs:
 ;    A is the char to draw

@@ -121,7 +121,7 @@ _:
   add hl,bc
   add hl,hl
   add hl,hl
-;srl c does the same thing but preserves af to use after the adding so carry can be checked. Save 
+;srl c does the same thing but preserves af to use after the adding so carry can be checked. 
   ld c,a
   srl c
   add hl,bc
@@ -130,24 +130,23 @@ _:
   rra
   ld b,3
   ld de,$8005
-  jr c,PutRight
+  jr c,+_
+  ld ixl,$0F
 ;===============================================================
 PutLeft:
 ;===============================================================
-  ld c,$F0
   call Put
   inc de
-  ld c,$F0
   call ShiftPut
   djnz PutLeft
   ret
+_:
+  ld ixl,$F0
 ;===============================================================
 PutRight:
 ;===============================================================
-  ld c,$0F
   call ShiftPut
   inc de
-  ld c,$0F
   call Put
   djnz PutRight
   ret
@@ -158,7 +157,7 @@ Put:
   jr z,+_
   cpl
 _:
-  and c
+  and ixl
   or (hl)
   ld (hl),a
   ld a,b

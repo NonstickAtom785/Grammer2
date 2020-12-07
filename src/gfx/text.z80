@@ -74,8 +74,8 @@ putc_LUT:
   .dw VPutC_OS_large
 
 PutFS:
-; read the font from flash to RAM
-; need to add 3*A to the fontpointer
+; Read the font from flash to RAM
+; Need to add 3*A to the fontpointer
   ld hl,(FontPointer)
   ld b,0
   ld c,a
@@ -94,9 +94,9 @@ _:
   ld de,$8005
   call readarc
 
-; get the text position and update it
+; Get the text position and update it
   ld hl,(textRow)
-;  ld b,0 ;B is already 0 from the ReadArc routine
+; ld b,0 ;B is already 0 from the ReadArc routine
   ld a,h
   cp 24
   ld a,l
@@ -111,14 +111,14 @@ _:
   add a,6
 _:
   ld l,a
-; need to advance the x-coord by 1
+; Need to advance the x-coord by 1
   inc h
   ld (textRow),hl
   dec h
 ; Want A*12+H/2+(gbuf_temp), and we know A < 64
   add a,a
   add a,a
-; Now A*3+(gbuf_temp)+H/2
+  ;now A*3+(gbuf_temp)+H/2
   ld c,a
   ld a,h
   ld hl,(gbuf_temp)
@@ -129,25 +129,43 @@ _:
   srl c
   add hl,bc
   rra
-  ld e,5    ; Now DE points to the byte before the char data
-  ld a,(de)
-  jr nc,+_
-  ld c,$0F
+  ld e,4    ; Now DE points to the byte before the char data
+  jr nc,put_left
 put_right:
+  ld c,$0F
   call put_right2
   call put_right2
 put_right2:
-  call shift_put_lr
+; Read in the byte
   inc de
+  ld a,(de)
+
+; Check if it needs to be inverted
+  bit InvertTextFlag,(iy+UserFlags)
+  jr z,$+3
+  cpl
+  ld b,a      ; Back up the byte
+  call shift_put_lr
+  ld a,b      ; Restore the byte
   jr put_lr
-_:
-  ld c,$F0
+
 put_left:
+  ld c,$F0
   call put_left2
   call put_left2
 put_left2:
-  call put_lr
+; Read in the byte
   inc de
+  ld a,(de)
+
+; Check if it needs to be inverted
+  bit InvertTextFlag,(iy+UserFlags)
+  jr z,$+3
+  cpl
+
+  ld b,a      ; Back up the byte
+  call put_lr
+  ld a,b      ; Restore the byte
 
 shift_put_lr:
 ; Rotate the nibbles
@@ -156,10 +174,6 @@ shift_put_lr:
   rrca
   rrca
 put_lr:
-; Check if it needs to be inverted
-  bit InvertTextFlag,(iy+UserFlags)
-  jr z,$+3
-  cpl
 ; Mask the byte
   and c
 
@@ -171,7 +185,6 @@ put_lr:
   ld a,l
   add a,12
   ld l,a
-  ld a,(de)   ; Restore the byte
   ret nc
   inc h
   ret

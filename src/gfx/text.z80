@@ -74,33 +74,14 @@ putc_LUT:
   .dw VPutC_OS_large
 
 PutFS:
-  push af
-  ld bc,(textRow)
-  ld a,b
-  cp 24
-  ld a,c
-  jr c,+_
-  ld b,0
-  add a,6
-_:
-  cp 3Bh
-  jr c,+_
-  sub 3Ch
-  jr nc,+_
-  add a,6
-_:
-  ld c,a
-  inc b
-  ld (textRow),bc
-  dec b
+; read the font from flash to RAM
+; need to add 3*A to the fontpointer
   ld hl,(FontPointer)
-  pop af
-  push bc
   ld b,0
   ld c,a
   add hl,bc
   add hl,bc
-  adc hl,bc
+  adc hl,bc     ;add hl,bc won't set the right flags, so use adc
   ld a,(font_ptr_page)
   jp p,+_
   or a
@@ -109,62 +90,90 @@ _:
   res 7,h
   inc a
 _:
-  ld bc,3
+  ld c,3
   ld de,$8005
   call readarc
-  pop bc
-  ld a,b
-  ld b,0
+
+; get the text position and update it
+  ld hl,(textRow)
+;  ld b,0 ;B is already 0 from the ReadArc routine
+  ld a,h
+  cp 24
+  ld a,l
+  jr c,+_
   ld h,b
-  ld l,c
-  add hl,hl
+  add a,6
+_:
+  cp 3Bh
+  jr c,+_
+  sub 3Ch
+  jr nc,+_
+  add a,6
+_:
+  ld l,a
+; need to advance the x-coord by 1
+  inc h
+  ld (textRow),hl
+  dec h
+; Want A*12+H/2+(gbuf_temp), and we know A < 64
+  add a,a
+  add a,a
+; Now A*3+(gbuf_temp)+H/2
+  ld c,a
+  ld a,h
+  ld hl,(gbuf_temp)
   add hl,bc
-  add hl,hl
-  add hl,hl
-;srl c does the same thing but preserves af to use after the adding so carry can be checked. 
+  add hl,bc
+  add hl,bc
   ld c,a
   srl c
   add hl,bc
-  ld bc,(gbuf_temp)
-  add hl,bc
   rra
-  ld b,3
-  ld de,$8005
-  jr c,+_
-  ld ixl,$0F
-;===============================================================
-PutLeft:
-;===============================================================
-  call Put
+  ld e,5    ; Now DE points to the byte before the char data
+  ld a,(de)
+  jr nc,+_
+  ld c,$0F
+put_right:
+  call put_right2
+  call put_right2
+put_right2:
+  call shift_put_lr
   inc de
-  call ShiftPut
-  djnz PutLeft
-  ret
+  jr put_lr
 _:
-  ld ixl,$F0
-;===============================================================
-PutRight:
-;===============================================================
-  call ShiftPut
+  ld c,$F0
+put_left:
+  call put_left2
+  call put_left2
+put_left2:
+  call put_lr
   inc de
-  call Put
-  djnz PutRight
-  ret
-ShiftPut:
-  rlca \ rlca \ rlca \ rlca
-Put:
-  bit textInverse,(iy+textFlags)
-  jr z,+_
+
+shift_put_lr:
+; Rotate the nibbles
+  rrca
+  rrca
+  rrca
+  rrca
+put_lr:
+; Check if it needs to be inverted
+  bit InvertTextFlag,(iy+UserFlags)
+  jr z,$+3
   cpl
-_:
-  and ixl
+; Mask the byte
+  and c
+
+; OR it to the screen
   or (hl)
   ld (hl),a
-  ld a,b
-  ld bc,12
-  add hl,bc
-  ld b,a
-  ld a,(de)
+
+; Advance the gbuf ptr
+  ld a,l
+  add a,12
+  ld l,a
+  ld a,(de)   ; Restore the byte
+  ret nc
+  inc h
   ret
 
 OmniCalcFont:

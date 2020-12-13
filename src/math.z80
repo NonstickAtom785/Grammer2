@@ -1,7 +1,7 @@
 Sqrt:
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,floatsqrt
   ld a,(hl)
-  cp 3Ah
-  jr z,floatsqrt
   inc hl
   cp $AE
   push af
@@ -30,7 +30,6 @@ floatsqrt:
   ld hl,sqrtSingle
   jr float_stepin_1
 sinefloat:
-  pop af
   ld hl,sinSingle
   jr float_stepin_1
 _:
@@ -49,19 +48,15 @@ float_stepin_1_:
   ex de,hl
   jp next_page_call
 Cos:
-  ld a,(hl)
-  cp 3Ah
-  jr z,-_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,-_
   ld a,64
   .db $FE
 Sin:
-  xor a
-  push af
-  ld a,(hl)
-  cp 3Ah
-  jr z,sinefloat
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,sinefloat
   call ParseFullArg
-  pop af
+  xor a
   add a,c
 Sine:
   ld d,a
@@ -93,17 +88,15 @@ _:
   ld hl,absSingle
   jp float_stepin_1
 absToken:
-  ld a,(hl)
-  cp 3Ah
-  jr z,-_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,-_
   call ParseFullArg
   bit 7,b
   ret z
   jr negateBC
 Negative:
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call ParseFullArg
 negateBC:
   xor a \ sub c \ ld c,a
@@ -114,8 +107,8 @@ _:
   jp float_stepin_1
 logToken:
   ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   call ParseNextFullArg
   cp 2Bh
   ld hl,logSingle
@@ -125,9 +118,8 @@ logToken:
   jr float_stepin_1_
 Add:
   push bc
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call ParseFullArg
   pop hl
   xor a
@@ -144,9 +136,8 @@ _:
   jp float_stepin
 SubtractToken:
   push bc
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call ParseFullArg
   pop hl
   xor a
@@ -172,9 +163,8 @@ Squared:
   jr mul_stepin
 Multiply:
   push bc
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call ParseFullArg
   pop de
 mul_stepin:
@@ -269,9 +259,8 @@ _:
   ret
 Divide:
   push bc
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call ParseFullArg
   pop hl
   call HL_Div_BC
@@ -283,9 +272,8 @@ _:
   ld hl,divSingle
   jp float_stepin
 PowToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadTOken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadTOken
   push bc
   ld hl,powSingle
   jp float_stepin
@@ -294,9 +282,8 @@ _:
   ld hl,expSingle
   jp float_stepin_1
 PowerOf2:
-  ld a,(hl)
-  cp 3Ah
-  jr z,-_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,-_
   call ParseFullArg
   ld a,c
   ld hl,0
@@ -320,9 +307,8 @@ Po2End:
 
 Logic:
 Equals:
-  ld a,(hl)
-  cp $3A
-  jr z,feq
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,feq
   push bc
 factorialStepIn:
   call ParseFullArg
@@ -377,9 +363,8 @@ xorLogic:
   ld a,l \ xor c \ ld c,a
   ret
 Less:
-  ld a,(hl)
-  cp $3A
-  jr z,flt
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,flt
   call MoreLogic
   xor a
   sbc hl,bc
@@ -394,9 +379,8 @@ flt:
   inc c
   ret
 Greater:
-  ld a,(hl)
-  cp $3A
-  jr z,fgt
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,fgt
   call MoreLogic
   xor a
   scf
@@ -414,9 +398,8 @@ fgt:
   inc c
   ret
 LessOrEqual:
-  ld a,(hl)
-  cp $3A
-  jr z,fle
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,fle
   call MoreLogic
   xor a
   scf
@@ -433,9 +416,8 @@ fle:
   dec c
   ret
 MoreOrEqual:
-  ld a,(hl)
-  cp $3A
-  jr z,fge
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,fge
   call MoreLogic
   xor a
   sbc hl,bc
@@ -451,9 +433,8 @@ fge:
   inc c
   ret
 NotEqual:
-  ld a,(hl)
-  cp $3A
-  jr z,fne
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,fne
   call MoreLogic
   xor a
   sbc hl,bc
@@ -470,9 +451,8 @@ fne:
   ret
 
 RandToken:
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,+_
   call prng16
   ld b,h
   ld c,l
@@ -494,15 +474,13 @@ float_stepin_0:
 
 
 tanToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,tanSingle
   jp float_stepin_1
 atanToken:
-  ld a,(hl)
-  cp 3Ah
-  jr z,atan_float
+  bit floatmode,(iy+ModeFlags2)
+  jr nz,atan_float
   call ParseFullArg
   push bc
   ld bc,128
@@ -518,66 +496,55 @@ atan_float:
   jp float_stepin_1
 
 acosToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,acosSingle
   jp float_stepin_1
 asinToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,asinSingle
   jp float_stepin_1
 
-
 tanhToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,tanhSingle
   jp float_stepin_1
 coshToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,coshSingle
   jp float_stepin_1
 sinhToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,sinhSingle
   jp float_stepin_1
 atanhToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,atanhSingle
   jp float_stepin_1
 acoshToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,acoshSingle
   jp float_stepin_1
 asinhToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,asinhSingle
   jp float_stepin_1
 pow10Token:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,pow10Single
   jp float_stepin_1
 
 meanToken:
-  ld a,(hl)
-  cp 3Ah
-  jp nz,ErrBadToken
+  bit floatmode,(iy+ModeFlags2)
+  jp z,ErrBadToken
   ld hl,ameanSingle
 float_stepin_2:
   push hl

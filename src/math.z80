@@ -105,24 +105,21 @@ negateBC:
 _:
   ld hl,negSingle
   jp float_stepin_1
-logToken:
-  ld a,(hl)
-  bit floatmode,(iy+ModeFlags2)
-  jp z,ErrBadToken
-  call ParseNextFullArg
-  cp 2Bh
-  ld hl,logSingle
-  jp z,float_stepin_2_
-  ld hl,log10Single
-  push hl
-  jr float_stepin_1_
+  logToken:
+    bit floatmode,(iy+ModeFlags2)
+    jr z,ErrBadToken
+  _:
+    call ParseNextFullArg_HL
+    cp 2Bh
+    ld hl,logSingle
+    jp z,float_stepin_2_
+    ld hl,log10Single
+    push hl
+    jr float_stepin_1_
 Add:
   push bc
   bit floatmode,(iy+ModeFlags2)
   jr nz,+_
-  ld a,(hl)
-  cp 3Ah
-  jr z,+_
   call ParseFullArg
   pop hl
   xor a

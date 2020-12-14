@@ -136,7 +136,7 @@ CommandJumpTable:
  .dw ErrBadToken      ; $80
  .dw ErrBadToken      ; $81
  .dw Multiply         ; $82
- .dw SkiplineDiv      ; $83
+ .dw Divide           ; $83
  .dw ErrBadToken      ; $84
  .dw ClrDrawToken     ; $85
  .dw ErrBadToken      ; $86

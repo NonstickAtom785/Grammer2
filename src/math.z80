@@ -36,7 +36,7 @@ _:
   ld hl,cosSingle
 float_stepin_1:
   push hl     ;the call to make
-  call ParseNextFullArg
+  call ParseFullArg
 float_stepin_1_:
   push bc     ;the second argument
   call floatstackpush
@@ -120,6 +120,9 @@ Add:
   push bc
   bit floatmode,(iy+ModeFlags2)
   jr nz,+_
+  ld a,(hl)
+  cp 3Ah
+  jr z,+_
   call ParseFullArg
   pop hl
   xor a
@@ -177,7 +180,7 @@ _:
   ld hl,mulSingle
 float_stepin:
   push hl
-  call ParseNextFullArg
+  call ParseFullArg
   push bc
   call floatstackpush
   ld b,h
@@ -203,6 +206,7 @@ floatstackpush:
   ret
 Comment:
 SkipLine:
+  dec hl
   bit floatmode,(iy+ModeFlags2)
   jp nz,ConvRStr_Float
   call EndOfLine
@@ -548,7 +552,7 @@ meanToken:
   ld hl,ameanSingle
 float_stepin_2:
   push hl
-  call ParseNextFullArg
+  call ParseFullArg
   pop hl
 float_stepin_2_:
   push bc
